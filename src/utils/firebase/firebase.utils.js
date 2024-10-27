@@ -4,6 +4,7 @@ import {
   signInWithRedirect,
   signInWithPopup,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
@@ -21,15 +22,20 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
-provider.setCustomParameters({
+// Provider, it is just for google but we can have many providers like Apple or facebook
+googleProvider.setCustomParameters({
   prompt: "select_account",
 });
 
 // auth comunicate with google
 export const auth = getAuth();
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider);
+export const signInWithGooglePopup = () =>
+  signInWithPopup(auth, googleProvider);
+
+export const signInWitGoogleRedirect = () =>
+  signInWithRedirect(auth, googleProvider);
 
 // creazione del DB
 export const db = getFirestore();
@@ -37,7 +43,12 @@ export const db = getFirestore();
 // we need to see if there is a document
 // 1: db, 2 is collection name and 3 is going to be the IDENTIFIER
 // const userDocRef = doc(db, 'users', 'NikeAirMax')
-export const createUserDocumentFromAuth = async (userAuth) => {
+export const createUserDocumentFromAuth = async (
+  userAuth,
+  aditionalInformation = {}
+) => {
+  if (!userAuth) return;
+
   const userDocRef = doc(db, "users", userAuth.uid);
   // here there are differents ways to check data but remains a ref
   const userSnapshot = await getDoc(userDocRef);
@@ -54,6 +65,7 @@ export const createUserDocumentFromAuth = async (userAuth) => {
         displayName,
         email,
         createdAt,
+        ...aditionalInformation,
       });
     } catch (error) {
       console.log("error creating the user", error);
@@ -63,6 +75,12 @@ export const createUserDocumentFromAuth = async (userAuth) => {
   // if user data exists
   // return userSnapshot
   return userDocRef;
+};
+
+export const createAuthUserWithEmailAndPassword = async (email, password) => {
+  if (!email || !password) return;
+
+  return await createUserWithEmailAndPassword(auth, email, password);
 };
 
 // console.log(userSnapshot);
